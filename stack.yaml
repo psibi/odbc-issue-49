@@ -1,0 +1,7 @@
+resolver: lts-18.28
+
+packages:
+- .
+
+nix:
+  shell-file: shell.nix
