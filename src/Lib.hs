@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Lib
-  ( query,
+  ( query2,
   )
 where
 
@@ -13,6 +13,8 @@ import qualified Data.Text.IO as T
 import Database.ODBC.Internal (Binary, Connection, ODBCException (..), Step (..), Value (..))
 import qualified Database.ODBC.Internal as Internal
 import System.Environment (lookupEnv)
+import Database.ODBC.SQLServer
+import Data.Text.Encoding (encodeUtf8)
 
 connectWithString :: IO Connection
 connectWithString = do
@@ -31,17 +33,29 @@ setupTable = do
   conn <- connectWithString
   Internal.exec conn "DROP TABLE IF EXISTS wibble"
   Internal.exec conn "CREATE TABLE wibble (tt1 nvarchar, tt2 varchar(50))"
-  Internal.exec conn "insert into wibble (tt1, tt2) values ('£', '£')"
   pure conn
 
 dropTable :: Connection -> IO ()
 dropTable = Internal.close
+
+renderVarcharText :: Text -> Text
+renderVarcharText = renderValue . TextValue
+
 
 issue49 :: Connection -> IO ()
 issue49 conn = do
   vals <- Internal.query conn "SELECT tt1, tt2 from wibble"
   print vals
   mapM_ printValues (getValues vals)
+
+issue49_2 :: Connection -> IO ()
+issue49_2 conn = do
+  let que = "INSERT into wibble (tt1, tt2) values (" <> toSql pound <> "," <> toSql pound <> ")"
+      pound :: Text
+      pound = "£"
+  T.putStr $ renderQuery que
+  vals <- Internal.query conn $ renderQuery que
+  issue49 conn
 
 getValues :: [[(Internal.Column, Internal.Value)]] -> [Internal.Value]
 getValues xs = concat $ map (map snd) xs
@@ -50,5 +64,5 @@ printValues :: Internal.Value -> IO ()
 printValues (Internal.ByteStringValue bs) = print bs
 printValues (Internal.TextValue txt) = T.putStrLn txt
 
-query :: IO ()
-query = bracket setupTable dropTable issue49
+query2 :: IO ()
+query2 = bracket setupTable dropTable issue49_2
