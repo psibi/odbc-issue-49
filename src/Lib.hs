@@ -8,6 +8,7 @@ where
 import Control.Exception (bracket)
 import qualified Data.ByteString.Char8 as B8
 import Data.Text (Text)
+import Data.ByteString.Char8 (ByteString)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Database.ODBC.Internal (Binary, Connection, ODBCException (..), Step (..), Value (..))
@@ -50,9 +51,11 @@ selectRows conn = do
 
 issue49_2 :: Connection -> IO ()
 issue49_2 conn = do
-  let que = "INSERT into wibble (tt1, tt2) values (" <> toSql pound <> "," <> toSql pound <> ")"
+  let que = "INSERT into wibble (tt1, tt2) values (" <> toSql pound <> "," <> toSql poundBs <> ")"
       pound :: Text
       pound = "\632"
+      poundBs :: ByteString
+      poundBs = "\632"
   T.putStrLn $ renderQuery que
   Internal.query conn $ renderQuery que
   selectRows conn
@@ -62,9 +65,12 @@ selectWhere :: Connection -> IO ()
 selectWhere conn = do
   putStrLn "selectWhere"
   let where_query_tt1 = "SELECT tt1, tt2 FROM WIBBLE where tt1 = " <> toSql pound
-      where_query_tt2 = "SELECT tt1, tt2 FROM WIBBLE where tt2 = " <> toSql pound
+      where_query_tt2 = "SELECT tt1, tt2 FROM WIBBLE where tt2 = " <> toSql poundBs
       pound :: Text
       pound = "\632"
+
+      poundBs :: ByteString
+      poundBs = "\632"
   T.putStrLn $ renderQuery where_query_tt1
   vals <- Internal.query conn $ renderQuery where_query_tt1
   print vals
