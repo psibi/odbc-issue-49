@@ -42,8 +42,8 @@ renderVarcharText :: Text -> Text
 renderVarcharText = renderValue . TextValue
 
 
-issue49 :: Connection -> IO ()
-issue49 conn = do
+selectRows :: Connection -> IO ()
+selectRows conn = do
   vals <- Internal.query conn "SELECT tt1, tt2 from wibble"
   print vals
   mapM_ printValues (getValues vals)
@@ -52,10 +52,25 @@ issue49_2 :: Connection -> IO ()
 issue49_2 conn = do
   let que = "INSERT into wibble (tt1, tt2) values (" <> toSql pound <> "," <> toSql pound <> ")"
       pound :: Text
-      pound = "£"
-  T.putStr $ renderQuery que
-  vals <- Internal.query conn $ renderQuery que
-  issue49 conn
+      pound = "\632"
+  T.putStrLn $ renderQuery que
+  Internal.query conn $ renderQuery que
+  selectRows conn
+  selectWhere conn
+
+selectWhere :: Connection -> IO ()
+selectWhere conn = do
+  putStrLn "selectWhere"
+  let where_query_tt1 = "SELECT tt1, tt2 FROM WIBBLE where tt1 = " <> toSql pound
+      where_query_tt2 = "SELECT tt1, tt2 FROM WIBBLE where tt2 = " <> toSql pound
+      pound :: Text
+      pound = "\632"
+  T.putStrLn $ renderQuery where_query_tt1
+  vals <- Internal.query conn $ renderQuery where_query_tt1
+  print vals
+  T.putStrLn $ renderQuery where_query_tt2
+  vals <- Internal.query conn $ renderQuery where_query_tt2
+  print vals
 
 getValues :: [[(Internal.Column, Internal.Value)]] -> [Internal.Value]
 getValues xs = concat $ map (map snd) xs
